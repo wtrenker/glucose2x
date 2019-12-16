@@ -39,10 +39,6 @@ def home():
 def averages():
     return render_template('averages.jinja2', title='Blood Glucose Daily Average', req=dir(request), timestamp=time.time())
 
-@app.route('/dataentry')
-def dataentry():
-    return render_template('dataentry.jinja2', title='Data Entry', req=dir(request), timestamp=time.time())
-
 @app.route(Markup('/chart'))
 def chart():
 
