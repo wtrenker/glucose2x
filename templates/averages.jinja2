@@ -1,0 +1,5 @@
+{% extends "base.jinja2" %}
+{% block content %}
+    <a href="{{ url_for('home') }}"><h3>Home</h3></a>
+    <img src="{{ url_for('.chart') }}?{{ timestamp }}" />
+{% endblock %}

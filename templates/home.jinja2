@@ -1,0 +1,24 @@
+{% extends "base.jinja2" %}
+    {% block content %}
+
+    <h2>2019</h2>
+
+    <a href="{{ url_for('averages') }}"><h3>View Average Daily Blood Glucose Chart</h3></a>
+
+    <div class="blockquote" class="blockquote-reverse"
+       style="border: 3px solid red; margin: 50px; padding: 10px; border-radius: 10px;
+       background-color: rgba(127, 255, 212, 0.1);">
+    <p class="blockquote" >
+    The single most important step you can take to get a trustworthy reading is to use good ol' soap and water before you prick your finger. "We're concerned about whether there might be some residue from eating a piece of fruit or perhaps some lotion on your hands. That can affect the test," says Marlene Bedrich, RN, MS, CDE, program coordinator for the University of California Diabetes Teaching Center.
+    </p>
+    <footer>--From <i>10 Ways To Master Your Blood Glucose Meter</i> on the <a href="http://www.diabetesforecast.org/2012/apr/10-ways-to-master-your-blood-glucose-meter.html">Diabetes Forecast</a> website
+    </footer>
+    </div>
+
+    {#<div style="position: fixed; bottom: 0; right: 0;">
+        <a href="{{ url_for('dataentry') }}">
+            <img src="{{ url_for('static', filename='smiley.png') }}">
+        </a>
+    </div>#}
+    
+    {% endblock %}
