@@ -159,7 +159,7 @@ def chart():
     return send_file(img, mimetype='image/png')
 
 @app.route("/signin", methods=['GET', 'POST'])
-def signint():
+def signin():
     if request.method == 'GET':
         flash(dbPath)
         form = SigninForm(request.form)
