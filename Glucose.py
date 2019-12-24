@@ -16,6 +16,9 @@ from pathlib import Path
 import json
 import pytz
 import pprint
+import logging
+import logging.handlers
+import FileSessLog as fsl
 
 dbFileName = "glucose.db"
 dbPath = Path(f'/home/bill/glucose2/{dbFileName}')
@@ -28,9 +31,9 @@ class Readings(db.Entity):
     comment = Optional(str)
     hold = Optional(float)
 
-class Info(db.Entity):
-    name = PrimaryKey(str)
-    value = Optional(str)
+# class Info(db.Entity):
+#     name = PrimaryKey(str)
+#     value = Optional(str)
 
 zulu = pytz.timezone('UTC')
 pst = pytz.timezone("America/Vancouver")
@@ -42,6 +45,13 @@ app = Flask(__name__)
 app.config.from_object(__name__)
 app.config['SECRET_KEY'] = os.urandom(512)
 app.debug = True
+
+if app.debug:
+    fsl.initLog()
+    log = fsl.log
+else:
+    def noop(dummy1): pass
+    log = noop()
 
 jinjadict = {}
 
@@ -55,9 +65,18 @@ def methodNotAllowed(e):
 def methodNotAllowed(e):
     return render_template('500.jinja2'), 500
 
+
+firstTimeThrough= True
 @app.route('/', methods=['GET'])
 def home():
-    session['codeok'] = False
+    global firstTimeThrough
+    if firstTimeThrough:
+        fsl.initSession()
+        fsl.initLog()
+        firstTimeThrough = False
+        log('*********************** starting **********************')
+    log(f'home() {request.method}')
+    fsl.putSession('signedin', False)
     return render_template('Home.jinja2', title='Glucose Chart')
 
 @app.route('/averages', methods=['GET'])
@@ -160,25 +179,36 @@ def chart():
 
 @app.route("/signin", methods=['GET', 'POST'])
 def signin():
+
+    # f = open('/home/bill/glucose2/glucose2/wdt.log', 'w')
+    # f.write(f'signin() {request.method}')
+    # f.close()
+
+    log(f'signin() {request.method}')
+
     if request.method == 'GET':
         flash(dbPath)
         form = SigninForm(request.form)
         jinjadict.update(dict(form=form))
+        log('signin: render_template(Signin.jinja2)')
         return render_template('Signin.jinja2', **jinjadict)
     else:
         form = SigninForm(request.form)
         jinjadict.update(dict(form=form))
         typedcode = form.data['code']
-        with db_session:
-            savedcode = Info['code'].value
-        codeok = verify_password(savedcode, typedcode)
-        session['codeok'] = codeok
-        if codeok:
+        log(f'signin: typedcode = {typedcode}')
+        savedcode = fsl.getCode()
+        log(f'signin: savedcode = {savedcode}')
+        signedin = verify_password(savedcode, typedcode)
+        fsl.putSession('signedin', signedin)
+        if signedin:
             with db_session:
                 numberOfHeldReadings = len(Readings.select(lambda c: c.hold is not None))
+            log(f'signin: numberOfHeldReadings = {numberOfHeldReadings}')
             jinjadict.update(dict(numberOfHeldReadings=numberOfHeldReadings))
             # return render_template('Admin.jinja2', **jinjadict)
             rv = redirect(url_for('admin'))
+            log('signin: redirect(url_for("admin"))')
             return rv
         else:
             flash('Try Again')
@@ -186,31 +216,40 @@ def signin():
 
 @app.route("/admin", methods=['GET'])
 def admin():
-    if not(session.get('codeok') and session['codeok']):
+    log(f'admin() {request.method}')
+    if fsl.getSession('signedin'):
+        log(f'admin: signedin exists and = {fsl.getSession("signedin")}')
+    else:
+        log(f'admin: signedin does not exist')
+    if not(fsl.getSession('signedin')):
+        log(f'admin: redirect(url_for("signin")')
         return redirect(url_for('signin'))
     flash(dbPath)
     with db_session:
         numberOfHeldReadings = len(Readings.select(lambda c: c.hold is not None))
-        if numberOfHeldReadings == 0:
-            flash('There are no partial readings.')
-        elif numberOfHeldReadings == 1:
-            flash('There is one partial reading.')
-        else:
-            flash(f'There are {numberOfHeldReadings} partial readings.')
-    session['numberOfHeldReadings'] = numberOfHeldReadings
+    log(f'admin: numberOfHeldReadings = {numberOfHeldReadings}')
+    if numberOfHeldReadings == 0:
+        flash('There are no partial readings.')
+    elif numberOfHeldReadings == 1:
+        flash('There is one partial reading.')
+    else:
+        flash(f'There are {numberOfHeldReadings} partial readings.')
+    log(f'admin: render_template("Admin.jinja2")')
+    fsl.putSession('numberOfHeldReadings', numberOfHeldReadings)
     return render_template('Admin.jinja2', **jinjadict)
     # return redirect(url_for('admin'))
 
 @app.route("/enter", methods=['GET', 'POST'])
 def enter():
 
+    log(f'enter() {request.method}')
+    log(f'enter: isLoggedIn = {fsl.getSession("signedin")}')
+
     flash(dbPath)
 
     if request.method == 'GET':
-        if not (session.get('codeok') and session['codeok']):
-            url = url_for('signin')
-            redir = redirect(url)
-            return redir
+        if not (fsl.getSession('signedin')):
+            return redirect(url_for('signin'))
         form = DataEntryForm(request.form)
         jinjadict.update(dict(form=form))
         rv = render_template('EnterReading.jinja2', **jinjadict)
@@ -230,7 +269,7 @@ def enter():
             hold = None
         try:
             with db_session:
-                Readings(date = reqdate, average = average, comment = comment, hold = hold)
+                Readings(date=reqdate, average=average, comment=comment, hold=hold)
         except Exception as e:
             e = str(e)
             if e.find('UNIQUE constraint failed') > -1:
@@ -250,28 +289,28 @@ def enter():
 @app.route("/selectReading", methods=['GET'])
 def selectReading():
 
-    if not (session.get('codeok') and session['codeok']):
+    if not fsl.getSession('signedin'):
         return redirect(url_for('signin'))
 
     flash(dbPath)
 
+    form = SelectReadingForm(request.form)
+    jinjadict.update(dict(form=form))
     with db_session:
-        form = SelectReadingForm(request.form)
-        jinjadict.update(dict(form=form))
         heldReadings = Readings.select(lambda c: c.hold is not None).order_by(1)
-        numberOfHeldReadings = len(heldReadings)
         heldReadingsList = list(heldReadings)
-        if numberOfHeldReadings > 0:
-            heldReadingDates = []
-            index = 1
-            for heldReading in heldReadingsList:
-                heldReadingDates.append((f'D{index}', heldReading.date))
-                index += 1
-            form.helddateslist.choices = heldReadingDates
-            session['heldDates'] = heldReadingDates
-            return render_template('SelectReading.jinja2', **jinjadict)  # form=heldForm)
-        else:
-            return render_template('NoneHeld.jinja2', **jinjadict)
+    numberOfHeldReadings = len(heldReadingsList)
+    if numberOfHeldReadings > 0:
+        heldReadingDates = []
+        index = 1
+        for heldReading in heldReadingsList:
+            heldReadingDates.append((f'D{index}', heldReading.date))
+            index += 1
+        form.helddateslist.choices = heldReadingDates
+        fsl.putSession('heldDates', heldReadingDates)
+        return render_template('SelectReading.jinja2', **jinjadict)  # form=heldForm)
+    else:
+        return render_template('NoneHeld.jinja2', **jinjadict)
 
 @app.route("/edit", methods=['POST'])
 def edit():
@@ -280,15 +319,15 @@ def edit():
 
     form = SelectReadingForm(request.form)
     FormIndex = form.data['helddateslist']
-    heldReadingDates = session['heldDates']
-    session.pop('heldDates')
+    heldReadingDates = fsl.getSession('heldDates')
+    fsl.putSession('heldDates', None)
     heldReadingDates = dict(heldReadingDates)
     WorkingDate = heldReadingDates[FormIndex]
-    session['WorkingDate'] = WorkingDate
+    fsl.putSession('WorkingDate', WorkingDate)
     with db_session:
         reading = Readings[WorkingDate]
-        heldReading = namedtuple('heldReading', ['readingDate', 'amreading', 'annotation'])
-        hr = heldReading(WorkingDate, reading.hold, reading.comment)
+    heldReading = namedtuple('heldReading', ['readingDate', 'amreading', 'annotation'])
+    hr = heldReading(WorkingDate, reading.hold, reading.comment)
     form = EditReadingForm(obj=hr)
     jinjadict.update(dict(form=form))
     return render_template('EditReading.jinja2', **jinjadict)
@@ -296,15 +335,16 @@ def edit():
 @app.route("/update", methods=['POST'])
 def update():
 
-    if not (session.get('codeok') and session['codeok']):
+    if not fsl.getSession('signedin'):
         return redirect(url_for('signin'))
 
-    WorkingDate = session['WorkingDate']
-    session.pop('WorkingDate')
+    WorkingDate = fsl.getSession('WorkingDate')
+    fsl.putSession('WorkingDate', None)
     form = EditReadingForm(request.form)
     evening = form.data['pmreading']
     if evening is None:
         return render_template('NoEvening.jinja2', **jinjadict)
+    assert WorkingDate is not None
     with db_session:
         reading = Readings[WorkingDate]
         morning = reading.hold
@@ -313,12 +353,6 @@ def update():
         reading.comment = form.data['annotation']
     return redirect(url_for('admin'))
 
-
-@app.route("/test", methods=['GET'])
-def atest():
-    x = url_for('atest')
-    x = redirect(x)
-    return x
 
 if __name__ == '__main__':
     port = 5000

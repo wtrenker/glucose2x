@@ -31,5 +31,5 @@ def verify_password(stored_password, provided_password):
 
 
 if __name__ == '__main__':
-    storepw = hash_password('gluc0ses3cret')
+    storepw = hash_password('a1c')
     print(storepw)
