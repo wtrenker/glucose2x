@@ -9,8 +9,8 @@ class SessionInfo(db.Entity):
     name = PrimaryKey(str)
     value = Optional(str)
 
-db.bind(provider='sqlite', filename='SessionLog.db', create_db=True)
-db.generate_mapping(create_tables=True)
+db.bind(provider='sqlite', filename='db/SessionLog.db', create_db=False)
+db.generate_mapping(create_tables=False)
 
 def _getjasonobj(objtype):
     assert objtype in ['log', 'session']
@@ -97,7 +97,7 @@ def rem(name):
     pass
 
 def dumplog():
-    print('----------- db log -----------')
+    print('-----==--- db log -----------')
     logdict = getContainer('log')
     if not logdict:
         print('empty log')
@@ -109,8 +109,8 @@ def dumplog():
 if __name__ == '__main__':
     initLog()
     log('Ths is line 1')
-    # log('Ths is line 2')
-    # log('Ths is line 3')
+    log('Ths is line 2')
+    log('Ths is line 3')
     dumplog()
 
     initSession()

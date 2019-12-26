@@ -21,7 +21,7 @@ import logging.handlers
 import FileSessLog as fsl
 
 dbFileName = "glucose.db"
-dbPath = Path(f'/home/bill/glucose2/{dbFileName}')
+dbPath = Path(f'/home/bill/glucose2/db/{dbFileName}')
 # dbPath = Path(dbFile)
 db = Database()
 
@@ -147,7 +147,7 @@ def chart():
     p = np.poly1d(z)
     trendLine, = ax1.plot_date(DateCombined, p(DateCombined), 'k--', label='Trend Line')
 
-    ax1.legend(handles=[lineCombined, trendLine, lineTarg], loc='upper left') # , loc='lower right' 'best'
+    ax1.legend(handles=[lineCombined, trendLine, lineTarg], loc='upper right') # , loc='lower right' 'best'
 
     plt.title('Average Daily Blood Glucose (Jardiance Trial)', loc='left')
     plt.title('William Trenker')
