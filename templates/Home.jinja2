@@ -1,4 +1,4 @@
-{% extends "base.jinja2" %}
+{% extends "Base.jinja2" %}
     {% block content %}
 
     <h2>2019</h2>
@@ -15,6 +15,13 @@
     </footer>
     </div>
 
+    <div id="fixed">
+    <a class="admin" style="display: none;" href="{{ url_for('admin') }}">Admin</a>
+    </div>
+
+{#    <div id="fixed">#}
+{#    <a class="admin" style="display: none;" href="{{ url_for('admin') }}Admin</a>#}
+{#    </div>#}
     {#<div style="position: fixed; bottom: 0; right: 0;">
         <a href="{{ url_for('dataentry') }}">
             <img src="{{ url_for('static', filename='smiley.png') }}">
