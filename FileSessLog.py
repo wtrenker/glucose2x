@@ -107,10 +107,10 @@ def dumplog():
     print('------- end of db log --------')
 
 if __name__ == '__main__':
-    initLog()
-    log('Ths is line 1')
-    log('Ths is line 2')
-    log('Ths is line 3')
+    # initLog()
+    # log('Ths is line 1')
+    # log('Ths is line 2')
+    # log('Ths is line 3')
     dumplog()
 
     initSession()

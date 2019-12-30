@@ -10,14 +10,10 @@ class DataEntryForm(FlaskForm):
     submit = SubmitField("Record Data")
 
 class DEholdEntryForm(FlaskForm):
-    date = StringField('Date', default="2019-12-22")
+    date = StringField('Date')
     heldValue = DecimalField("Held Value")
-# class OnHoldSelect(Form):
-#     date =
 
 class HeldDatesForm(FlaskForm):
-    # date = TextField("Date")
-    # held = DecimalField('Held Morning Reading', default=22)
     helddateslist = SelectField('Held Dates')
     submit = SubmitField("Send")
 
@@ -36,3 +32,6 @@ class SigninForm(FlaskForm):
     code = PasswordField('Code')
     submit = SubmitField('Continue')
 
+class PickReadingForm(FlaskForm):
+    date = StringField('Date')
+    submit = SubmitField('Pick')

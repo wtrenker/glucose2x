@@ -2,11 +2,12 @@
 {% block content %}
 
 {#    <h2><a href="{{ url_for('home',_external=True) }}">Home</a></h2>#}
-    <h2><a href="{{ url_for('enter') }}">Enter a new Reading</a></h2>
+    <h2><a href="{{ url_for('enterData') }}">Enter a new Reading</a></h2>
 
     {% if numberOfHeldReadings > 0 %}
          <h2><a href="{{ url_for('selectReading') }}">Choose and Complete a Partial Reading</a></h2>
     {% endif %}
+    <h2><a href="{{ url_for('pick') }}">Pick a Reading by date to edit</a></h2>
     <a href="{{ url_for('home') }}">Home</a>
     {{ globals }}
 {% endblock %}
