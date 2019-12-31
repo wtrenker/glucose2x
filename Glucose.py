@@ -12,7 +12,7 @@ import Chart
 import pprint
 
 dbFileName = "glucose.db"
-dbPath = Path(f'/home/bill/glucose2/db/{dbFileName}')
+dbPath = Path(f'./db/{dbFileName}')
 # dbPath = Path(dbFile)
 db = Database()
 
@@ -95,7 +95,7 @@ def setupNumberOfPartials():
 
 @app.route("/signin", methods=['GET', 'POST'])
 def signin():
-    # f = open('/home/bill/glucose2/glucose2/wdt.log', 'w')
+    # f = open('/home/bill/glucose2-dev/glucose2-dev/wdt.log', 'w')
     # f.write(f'signin() {request.method}')
     # f.close()
 
